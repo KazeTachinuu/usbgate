@@ -1,6 +1,7 @@
 # usbgate
 
-USB storage allowlist for macOS. A drive that is not on the list does not mount.
+USB storage allowlist for macOS, in the [USBGuard](https://usbguard.github.io/)
+model. A drive that is not on the list does not mount.
 
 ![how usbgate works](docs/how-it-works.svg)
 
