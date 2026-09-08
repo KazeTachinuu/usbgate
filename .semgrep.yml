@@ -1,0 +1,36 @@
+# Design invariants a linter cannot express.
+#   semgrep --config .semgrep.yml --error Sources
+#
+# Swift support is experimental, so the checks that the Swift grammar gets wrong
+# (it conflates `as!` with `as?`) are written as regexes instead of patterns.
+rules:
+  - id: allowlist-read-outside-store
+    languages: [swift]
+    severity: ERROR
+    message: >-
+      State files may only be read through Paths.read, which checks that the file
+      is root-owned and not group- or world-writable. Reading one anywhere else
+      bypasses that check.
+    patterns:
+      - pattern-either:
+          - pattern: "PropertyListSerialization.propertyList(...)"
+          - pattern: "FileManager.default.contents(...)"
+          - pattern: "String(contentsOfFile: ...)"
+          - pattern: "Data(contentsOf: ...)"
+      - pattern-not-inside: "public struct Paths { ... }"
+
+  - id: trap-in-daemon
+    languages: [swift]
+    severity: ERROR
+    message: >-
+      A trap in the approval path kills the daemon, and a dead daemon looks like
+      a permissive one. Handle the nil.
+    pattern-regex: '\b(try!|fatalError\(|as!\s)'
+
+  - id: shell-invocation
+    languages: [swift]
+    severity: ERROR
+    message: >-
+      Running a shell from a root daemon is an injection surface. Exec the
+      binary directly with an argument vector.
+    pattern-regex: '/bin/(sh|bash|zsh)'

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400"
+     role="img" aria-labelledby="how-it-works-title how-it-works-desc"
+     font-family="'Geist', -apple-system, 'Helvetica Neue', Arial, sans-serif">
+  <title id="how-it-works-title">How usbgate works</title>
+  <desc id="how-it-works-desc">A USB drive is plugged in. If it is on the allowlist it mounts. If not, it does not mount and the user is told why. Running sudo usbgate allow adds the drive to the allowlist file, which the daemon rereads at once, so the drive mounts from then on.</desc>
+
+  <defs>
+    <marker id="hw-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+    </marker>
+    <marker id="hw-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+    </marker>
+    <marker id="hw-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+  <line x1="240" y1="76" x2="288" y2="76" stroke="#4f5d75" stroke-width="1" marker-end="url(#hw-arrow)"/>
+  <line x1="496" y1="76" x2="544" y2="76" stroke="#4f5d75" stroke-width="1" marker-end="url(#hw-arrow)"/>
+  <path d="M 456 112 V 204 A 8 8 0 0 0 464 212 H 544"
+        fill="none" stroke="#eb6c36" stroke-width="1" marker-end="url(#hw-arrow-accent)"/>
+  <line x1="652" y1="248" x2="652" y2="280" stroke="#4f5d75" stroke-width="1" marker-end="url(#hw-arrow)"/>
+  <line x1="552" y1="324" x2="504" y2="324" stroke="#4f5d75" stroke-width="1" marker-end="url(#hw-arrow)"/>
+  <line x1="396" y1="288" x2="396" y2="120" stroke="#4f5d75" stroke-width="1" marker-end="url(#hw-arrow)"/>
+
+  <rect x="504" y="56" width="32" height="12" fill="#f5f5f5"/>
+  <text x="520" y="64" fill="#7a8399" font-size="12" font-family="'Geist Mono', ui-monospace, Menlo, monospace" text-anchor="middle">yes</text>
+  <rect x="412" y="148" width="32" height="12" fill="#f5f5f5"/>
+  <text x="428" y="156" fill="#eb6c36" font-size="12" font-family="'Geist Mono', ui-monospace, Menlo, monospace" text-anchor="middle">no</text>
+
+  <rect x="40" y="40" width="200" height="72" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+  <text x="140" y="80" fill="#2d3142" font-size="16" font-weight="600" text-anchor="middle">USB drive plugged in</text>
+
+  <rect x="296" y="40" width="200" height="72" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+  <text x="396" y="80" fill="#2d3142" font-size="16" font-weight="600" text-anchor="middle">On the list?</text>
+
+  <rect x="552" y="40" width="200" height="72" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+  <text x="652" y="80" fill="#2d3142" font-size="16" font-weight="600" text-anchor="middle">It mounts</text>
+
+  <rect x="552" y="176" width="200" height="72" rx="4" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="652" y="208" fill="#2d3142" font-size="16" font-weight="600" text-anchor="middle">It does not mount</text>
+  <text x="652" y="228" fill="#4f5d75" font-size="12" text-anchor="middle">the user is told why</text>
+
+  <rect x="552" y="288" width="200" height="72" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+  <text x="652" y="320" fill="#2d3142" font-size="12" font-family="'Geist Mono', ui-monospace, Menlo, monospace" text-anchor="middle">sudo usbgate allow</text>
+  <text x="652" y="340" fill="#4f5d75" font-size="12" text-anchor="middle">pick it from the list</text>
+
+  <rect x="296" y="288" width="200" height="72" rx="4" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+  <text x="396" y="320" fill="#2d3142" font-size="12" font-family="'Geist Mono', ui-monospace, Menlo, monospace" text-anchor="middle">allowlist.plist</text>
+  <text x="396" y="340" fill="#4f5d75" font-size="12" text-anchor="middle">root-owned, reread at once</text>
+</svg>
