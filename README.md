@@ -19,12 +19,6 @@ make install    # run as yourself, not with sudo
 `make` checks both requirements first. `make tools` adds swift-format, swiftlint
 and semgrep, used by `make check`.
 
-Only the build machine needs a toolchain, so an endpoint needs nothing installed:
-
-```sh
-make deploy HOST=user@mac
-```
-
 ## Use
 
 ```
