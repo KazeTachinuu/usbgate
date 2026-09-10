@@ -9,7 +9,7 @@ model. A drive that is not on the list does not mount.
 
 | | Needs |
 |---|---|
-| To build | macOS 13, and Swift 6.0 from `xcode-select --install` or Xcode 16 |
+| To build | macOS 13, and Swift 6.0.3 from `xcode-select --install` or Xcode 16.2 |
 | To run | nothing: the Swift runtime ships with macOS |
 
 ```sh

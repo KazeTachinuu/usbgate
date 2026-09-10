@@ -9,7 +9,7 @@
 # the version it actually found.
 set -u
 
-minimum=${1:-6.0}
+minimum=${1:-6.0.3}
 
 version_of() {
     "$1" -version 2>/dev/null |

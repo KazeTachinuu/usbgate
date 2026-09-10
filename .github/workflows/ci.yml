@@ -22,3 +22,14 @@ jobs:
 
       - name: Integration
         run: ./scripts/integration-test.sh
+
+  floor:
+    # The oldest toolchain the README promises. Catches use of API newer
+    # than MIN_SWIFT, which the default Xcode above would happily accept.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo xcode-select -s /Applications/Xcode_16.2.app
+      - run: swift --version
+      - run: swift build -c release
+      - run: swift test

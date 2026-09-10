@@ -9,7 +9,7 @@ LOG     := .build/install.log
 STATE   := /var/db/usbgate
 
 MIN_MACOS := 13
-MIN_SWIFT := 6.0
+MIN_SWIFT := 6.0.3
 
 # Chosen by version, not by location: a suitable Swift on PATH always wins.
 SWIFT := $(shell ./scripts/swift-toolchain.sh $(MIN_SWIFT))
@@ -30,7 +30,7 @@ prereqs:
 		echo "  [-] usbgate is macOS only (Disk Arbitration and IOKit)"; exit 1; fi
 	@macos=$$(sw_vers -productVersion); major=$$(echo $$macos | cut -d. -f1); \
 		if [ "$$major" -lt "$(MIN_MACOS)" ]; then \
-			echo "  [-] macOS $$macos; $(MIN_SWIFT) needs macOS $(MIN_MACOS) or later"; exit 1; fi; \
+			echo "  [-] macOS $$macos; usbgate needs macOS $(MIN_MACOS) or later"; exit 1; fi; \
 		echo "  [+] macOS $$macos"
 	@command -v $(SWIFT) >/dev/null 2>&1 || { \
 		echo "  [-] no swift found"; \
