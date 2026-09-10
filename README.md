@@ -7,14 +7,23 @@ model. A drive that is not on the list does not mount.
 
 ## Install
 
-Requires macOS 13 and Swift 6.0 or later, which stock Xcode 16 provides.
-`make` checks both first.
+| | Needs |
+|---|---|
+| To build | macOS 13, and Swift 6.0 from `xcode-select --install` or Xcode 16 |
+| To run | nothing: the Swift runtime ships with macOS |
 
 ```sh
 make install    # run as yourself, not with sudo
 ```
 
-`make tools` adds swift-format, swiftlint and semgrep, used by `make check`.
+`make` checks both requirements first. `make tools` adds swift-format, swiftlint
+and semgrep, used by `make check`.
+
+Only the build machine needs a toolchain, so an endpoint needs nothing installed:
+
+```sh
+make deploy HOST=user@mac
+```
 
 ## Use
 

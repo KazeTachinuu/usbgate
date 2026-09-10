@@ -19,7 +19,7 @@ SWIFT := $(shell ./scripts/swift-toolchain.sh $(MIN_SWIFT))
 # /bin/sh, so exporting it from here would never reach swiftlint.
 SOURCEKIT := DYLD_FRAMEWORK_PATH=$(shell xcode-select -p)/usr/lib
 
-.PHONY: build test lint format sast check tools integration install uninstall clean not-root sane prereqs
+.PHONY: build test lint format sast check tools integration install deploy uninstall clean not-root sane prereqs has-host
 
 # Building and installing need only the Swift toolchain. The linters and the SAST
 # scanner are optional: when absent they say so and are skipped.
@@ -138,6 +138,23 @@ install: not-root prereqs sane
 
 # The allowlist is left in place so reinstalling does not lose the devices you
 # authorised. Removing it is one command, printed below.
+# Only the build machine needs a toolchain: the Swift runtime ships with macOS,
+# so an endpoint needs nothing installed.
+has-host:
+	@[ -n "$(HOST)" ] || { echo "  usage: make deploy HOST=user@mac"; exit 2; }
+
+deploy: has-host prereqs sane build
+	@scp -q $(RELEASE) deploy/$(LABEL).plist $(HOST):
+	@ssh -t $(HOST) 'set -e; \
+		sudo install -d -o root -g wheel -m 755 $(PREFIX); \
+		sudo install -o root -g wheel -m 755 $(BIN) $(PREFIX)/$(BIN); \
+		sudo ln -sf $(PREFIX)/$(BIN) /usr/local/bin/$(BIN); \
+		sudo install -o root -g wheel -m 644 $(LABEL).plist $(DAEMON); \
+		sudo launchctl bootout system $(DAEMON) 2>/dev/null || true; \
+		sudo launchctl bootstrap system $(DAEMON); \
+		rm -f $(BIN) $(LABEL).plist'
+	@printf "  [+] deployed to %s\n" "$(HOST)"
+
 uninstall:
 	@printf "\n  [*] removing usbgate, sudo required\n"
 	@sudo launchctl bootout system $(DAEMON) 2>/dev/null || true
