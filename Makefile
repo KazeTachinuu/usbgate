@@ -26,7 +26,6 @@ SOURCEKIT := DYLD_FRAMEWORK_PATH=$(shell xcode-select -p)/usr/lib
 
 # Everything the build and the daemon require, checked before anything is built.
 prereqs:
-	@printf "\n  usbgate\n\n"
 	@if [ "$$(uname -s)" != "Darwin" ]; then \
 		echo "  [-] usbgate is macOS only (Disk Arbitration and IOKit)"; exit 1; fi
 	@macos=$$(sw_vers -productVersion); major=$$(echo $$macos | cut -d. -f1); \
@@ -34,16 +33,15 @@ prereqs:
 			echo "  [-] macOS $$macos; $(MIN_SWIFT) needs macOS $(MIN_MACOS) or later"; exit 1; fi; \
 		echo "  [+] macOS $$macos"
 	@command -v $(SWIFT) >/dev/null 2>&1 || { \
-		echo "  [-] swift not found"; \
-		echo "      install the command line tools:  xcode-select --install"; exit 1; }
-	@ver=$$($(SWIFT) -version 2>&1 | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1); \
-		major=$$(echo $$ver | cut -d. -f1); minor=$$(echo $$ver | cut -d. -f2); \
-		want_major=$$(echo $(MIN_SWIFT) | cut -d. -f1); want_minor=$$(echo $(MIN_SWIFT) | cut -d. -f2); \
-		if [ "$$major" -lt "$$want_major" ] || \
-		   { [ "$$major" -eq "$$want_major" ] && [ "$$minor" -lt "$$want_minor" ]; }; then \
+		echo "  [-] no swift found"; \
+		echo "      install the developer tools:  xcode-select --install"; exit 1; }
+	@ver=$$($(SWIFT) -version 2>/dev/null | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1); \
+		if [ -z "$$ver" ]; then \
+			echo "  [-] $(SWIFT) exists but does not run"; \
+			echo "      install the developer tools:  xcode-select --install"; exit 1; fi; \
+		if [ "$$(printf '%s\n%s\n' "$(MIN_SWIFT)" "$$ver" | sort -V | head -1)" != "$(MIN_SWIFT)" ]; then \
 			echo "  [-] swift $$ver at $(SWIFT); this needs $(MIN_SWIFT) or later"; \
-			echo "      install one:  brew install swiftly && swiftly init && swiftly install $(MIN_SWIFT)"; \
-			exit 1; fi; \
+			echo "      install the developer tools:  xcode-select --install"; exit 1; fi; \
 		echo "  [+] swift $$ver"
 
 # A past 'sudo make' leaves root-owned files in .build that a later user build
@@ -55,10 +53,10 @@ sane:
 		exit 1; \
 	fi
 
-build: sane
+build: prereqs sane
 	$(SWIFT) build -c release
 
-test: sane
+test: prereqs sane
 	$(SWIFT) test
 
 lint:
@@ -105,6 +103,7 @@ not-root:
 # Linting and the SAST scan are developer tools and are not part of installing.
 install: not-root prereqs sane
 	@mkdir -p .build
+	@printf "\n  usbgate\n\n"
 	@printf "  [*] building\n"
 	@$(SWIFT) build -c release >$(LOG) 2>&1 || { \
 		printf "  [-] build failed\n\n"; \
