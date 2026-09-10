@@ -15,6 +15,18 @@ public struct Device: Hashable, Sendable {
     /// Stable log and display form, `vvvv:pppp/serial`.
     public var id: String { String(format: "%04x:%04x/%@", vendor, product, serial) }
 
+    /// `id` cut to fit one line of a list.
+    ///
+    /// USB-to-NVMe bridges report serials of 128 characters, which wrap and
+    /// break the two-line entry layout.
+    ///
+    /// Display only. Matching, the audit log and the allowlist keep the full id.
+    public var shortID: String {
+        let limit = 32
+        guard serial.count > limit else { return id }
+        return String(format: "%04x:%04x/%@..", vendor, product, String(serial.prefix(limit - 2)))
+    }
+
     /// Plist form, as stored in the allowlist file.
     var entry: [String: Any] {
         [

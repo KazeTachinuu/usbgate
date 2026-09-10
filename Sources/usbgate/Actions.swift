@@ -51,7 +51,7 @@ func confirm(_ devices: [Attached]) -> Bool {
     print("\n  about to authorise \(count(devices.count, "drive", "drives")):\n")
     for device in devices {
         let name = device.name.padding(toLength: width, withPad: " ", startingAt: 0)
-        print("  \(Term.warn) \(name)  \(Term.dim(device.device.id))")
+        print("  \(Term.warn) \(name)  \(Term.dim(device.device.shortID))")
     }
     guard Term.isTTY else { return true }
     print("\n  proceed? [y/N] ", terminator: "")
@@ -63,7 +63,7 @@ func confirm(_ devices: [Attached]) -> Bool {
 func allowOne(_ gate: Gate, _ argument: String?) -> Never {
     let entry = pick(gate, argument, "allow")
     if let reason = gate.allow(entry.device, named: entry.name) { fail(reason) }
-    print("  \(Term.ok) authorised \(entry.name)  \(Term.dim(entry.device.id))")
+    print("  \(Term.ok) authorised \(entry.name)  \(Term.dim(entry.device.shortID))")
     mountNow(entry.device, named: entry.name)
     exit(0)
 }
@@ -73,7 +73,7 @@ func revokeOne(_ gate: Gate, _ argument: String?) -> Never {
     let device = pickAuthorised(gate, argument)
     let name = gate.policy.label(for: device)
     if let reason = gate.revoke(id: device.id) { fail(reason) }
-    print("  \(Term.ok) revoked \(name)  \(Term.dim(device.id))")
+    print("  \(Term.ok) revoked \(name)  \(Term.dim(device.shortID))")
     unmountNow(device, named: name)
     exit(0)
 }
@@ -82,7 +82,7 @@ func revokeOne(_ gate: Gate, _ argument: String?) -> Never {
 func dismissOne(_ gate: Gate, _ argument: String?) -> Never {
     let entry = pickRefused(gate, argument)
     gate.dismiss(entry)
-    apply(nil, "dismissed \(entry.name)  \(entry.device.id)")
+    apply(nil, "dismissed \(entry.name)  \(entry.device.shortID)")
 }
 
 /// `other on|off`: whether non-USB external storage may mount.

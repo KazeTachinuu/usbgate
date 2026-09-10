@@ -34,7 +34,7 @@ func status(_ gate: Gate) {
             let name = policy.label(for: device).padding(
                 toLength: width, withPad: " ", startingAt: 0)
             let mark = here.contains(device) ? "  \(Term.dim("attached"))" : ""
-            print("  \(Term.ok) \(name)  \(Term.dim(device.id))\(mark)")
+            print("  \(Term.ok) \(name)  \(Term.dim(device.shortID))\(mark)")
         }
     }
 
@@ -44,11 +44,14 @@ func status(_ gate: Gate) {
             let name = device.name.padding(toLength: width, withPad: " ", startingAt: 0)
             let why = decide(device, policy: policy, usable: state.isUsable)
             // The header already says there is no allowlist; do not repeat it here.
-            let note =
-                if case .blocked(let reason) = why, reason != .noAllowlist {
-                    "  " + Term.dim(reason.text)
-                } else { "" }
-            print("  \(Term.warn) \(name)  \(Term.dim(device.device.id))\(note)")
+            let reason: String? =
+                if case .blocked(let blocked) = why, blocked != .noAllowlist {
+                    blocked.text
+                } else { nil }
+            // Reason on its own line, as in `rejected`: a long serial and a long
+            // reason together do not fit one 80-column line.
+            print("  \(Term.warn) \(name)  \(Term.dim(device.device.shortID))")
+            if let reason { print("      \(Term.dim(reason))") }
         }
         print("\n  \(Term.info) sudo usbgate allow          to authorise one")
     }
@@ -74,7 +77,7 @@ func rejectedList(_ entries: [Rejection], rows: Int = defaultRows) {
     let width = entries.map(\.name.count).max() ?? 0
     for (index, entry) in entries.prefix(rows).enumerated() {
         let name = entry.name.padding(toLength: width, withPad: " ", startingAt: 0)
-        print("  \(Term.warn) \(index + 1)  \(name)  \(Term.dim(entry.device.id))")
+        print("  \(Term.warn) \(index + 1)  \(name)  \(Term.dim(entry.device.shortID))")
         print("        \(Term.dim(detail(entry.last, entry.count, entry.reason)))")
     }
     more(entries.count, rows)
@@ -156,7 +159,7 @@ func candidateList(_ list: [Candidate]) {
     print("")
     for (number, item) in list.prefix(defaultRows).enumerated() {
         let name = item.name.padding(toLength: width, withPad: " ", startingAt: 0)
-        print("  \(Term.warn) \(number + 1)  \(name)  \(Term.dim(item.device.id))")
+        print("  \(Term.warn) \(number + 1)  \(name)  \(Term.dim(item.device.shortID))")
         print("        \(Term.dim(item.note))")
     }
     more(list.count, defaultRows)
@@ -212,7 +215,7 @@ func pickAuthorised(_ gate: Gate, _ argument: String?) -> Device {
             let name = policy.label(for: device).padding(
                 toLength: width, withPad: " ", startingAt: 0)
             let here = attached.contains(device) ? "  \(Term.dim("attached"))" : ""
-            print("  \(Term.ok) \(number + 1)  \(name)  \(Term.dim(device.id))\(here)")
+            print("  \(Term.ok) \(number + 1)  \(name)  \(Term.dim(device.shortID))\(here)")
         }
         print("")
     }

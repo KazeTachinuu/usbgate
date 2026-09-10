@@ -12,7 +12,7 @@ MIN_MACOS := 13
 MIN_SWIFT := 6.0.3
 
 # Chosen by version, not by location: a suitable Swift on PATH always wins.
-SWIFT := $(shell ./scripts/swift-toolchain.sh $(MIN_SWIFT))
+SWIFT = $(eval SWIFT := $(shell ./scripts/swift-toolchain.sh $(MIN_SWIFT)))$(SWIFT)
 
 # swiftlint needs sourcekitd, which Command Line Tools ships outside the search
 # path. It has to be set on the command itself: SIP strips DYLD_* when make execs
@@ -38,11 +38,19 @@ prereqs:
 	@ver=$$($(SWIFT) -version 2>/dev/null | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1); \
 		if [ -z "$$ver" ]; then \
 			echo "  [-] $(SWIFT) exists but does not run"; \
-			echo "      install the developer tools:  xcode-select --install"; exit 1; fi; \
+			echo "      try:   sudo xcode-select --reset"; \
+			echo "      then:  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
+			exit 1; fi; \
 		if [ "$$(printf '%s\n%s\n' "$(MIN_SWIFT)" "$$ver" | sort -V | head -1)" != "$(MIN_SWIFT)" ]; then \
 			echo "  [-] swift $$ver at $(SWIFT); this needs $(MIN_SWIFT) or later"; \
-			echo "      install the developer tools:  xcode-select --install"; exit 1; fi; \
-		echo "  [+] swift $$ver"
+			echo "      sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
+			exit 1; fi; \
+		if ! $(SWIFT) package dump-package >/dev/null 2>&1; then \
+			echo "  [-] no swift here can load Package.swift"; \
+			echo "      try:   sudo xcode-select --reset"; \
+			echo "      then:  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
+			exit 1; fi; \
+		echo "  [+] swift $$ver at $(SWIFT)"
 
 # A past 'sudo make' leaves root-owned files in .build that a later user build
 # cannot overwrite, and the resulting errors do not say why.
@@ -53,10 +61,10 @@ sane:
 		exit 1; \
 	fi
 
-build: prereqs sane
+build: sane prereqs
 	$(SWIFT) build -c release
 
-test: prereqs sane
+test: sane prereqs
 	$(SWIFT) test
 
 lint:
@@ -101,7 +109,7 @@ not-root:
 
 # Quiet by design: each step reports one line, and only a failure prints detail.
 # Linting and the SAST scan are developer tools and are not part of installing.
-install: not-root prereqs sane
+install: not-root sane prereqs
 	@mkdir -p .build
 	@printf "\n  usbgate\n\n"
 	@printf "  [*] building\n"

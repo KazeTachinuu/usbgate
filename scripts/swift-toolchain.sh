@@ -1,12 +1,12 @@
 #!/bin/bash
-# Prints the path of a Swift toolchain that meets a minimum version.
+# Prints the path of a Swift toolchain that can build this package.
 #
-# Looked at in order: $SWIFT, whatever is on PATH, then any swiftly-managed
-# toolchain. Selection is by version, never by location, so a suitable Swift on
-# PATH always wins and nothing is silently preferred behind your back.
+# A toolchain is picked only if it meets the minimum version AND can actually
+# load Package.swift. Reporting a good version is not enough: a half-upgraded
+# install answers 6.3.2 and still fails, so every candidate is tried for real.
 #
-# If none qualifies, prints the best candidate anyway so the caller can report
-# the version it actually found.
+# Looked at in order: $SWIFT, PATH, swiftly, installed toolchains, Xcode.
+# If none qualifies, prints the first one found so the caller can report it.
 set -u
 
 minimum=${1:-6.0.3}
@@ -21,14 +21,35 @@ meets() {
     [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -1)" = "$2" ]
 }
 
+# Only meaningful next to a manifest; elsewhere the version is all we can check.
+loads() {
+    [ -f Package.swift ] || return 0
+    "$1" package dump-package >/dev/null 2>&1
+}
+
+candidates() {
+    echo "${SWIFT:-}"
+    command -v swift || true
+    echo "$HOME/.swiftly/bin/swift"
+    ls -d /Library/Developer/Toolchains/*/usr/bin/swift \
+          "$HOME"/Library/Developer/Toolchains/*/usr/bin/swift \
+          /Applications/Xcode*.app/Contents/Developer/Toolchains/*/usr/bin/swift \
+          2>/dev/null
+}
+
 fallback=""
-for candidate in "${SWIFT:-}" "$(command -v swift || true)" "$HOME/.swiftly/bin/swift"; do
+seen=""
+while read -r candidate; do
     [ -n "$candidate" ] && [ -x "$candidate" ] || continue
+    case "$seen" in *"|$candidate|"*) continue ;; esac
+    seen="$seen|$candidate|"
     [ -n "$fallback" ] || fallback=$candidate
-    if meets "$(version_of "$candidate")" "$minimum"; then
-        echo "$candidate"
-        exit 0
-    fi
-done
+    meets "$(version_of "$candidate")" "$minimum" || continue
+    loads "$candidate" || continue
+    echo "$candidate"
+    exit 0
+done <<CANDIDATES
+$(candidates)
+CANDIDATES
 
 echo "${fallback:-swift}"

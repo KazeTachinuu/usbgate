@@ -119,4 +119,22 @@ struct ParsingTests {
         #expect(parseInterfaceClasses("not a list") == nil)
         #expect(parseInterfaceClasses(["zz"]) == nil)
     }
+
+    @Test("a long serial is cut for display but never for matching")
+    func longSerialIsCutForDisplayOnly() {
+        let long = Device(
+            vendor: 0x0781, product: 0x5595, serial: String(repeating: "a", count: 128))
+        #expect(long.shortID.count == 42, "10 for vvvv:pppp/ plus 32 for the serial")
+        #expect(long.shortID.hasPrefix("0781:5595/"))
+        #expect(long.shortID.hasSuffix(".."))
+        #expect(long.id.hasSuffix("a"), "the full id keeps every character")
+        #expect(long.id.count == 138)
+    }
+
+    @Test("a serial that already fits is left exactly as it is")
+    func shortSerialIsUntouched() {
+        let normal = Device(vendor: 0x30de, product: 0x6545, serial: "C03FD5F6A7E8E5B1A326B2F9")
+        #expect(normal.shortID == normal.id)
+        #expect(!normal.shortID.hasSuffix(".."))
+    }
 }
