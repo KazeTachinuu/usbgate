@@ -2,7 +2,6 @@
 import PackageDescription
 
 let strict: [SwiftSetting] = [
-    .swiftLanguageMode(.v6),
     .enableUpcomingFeature("ExistentialAny"),
     .enableUpcomingFeature("InternalImportsByDefault"),
     .unsafeFlags(["-warnings-as-errors"], .when(configuration: .debug)),
@@ -27,8 +26,7 @@ let package = Package(
         ),
         .testTarget(
             name: "USBGateKitTests",
-            dependencies: ["USBGateKit"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["USBGateKit"]
         ),
     ]
 )
