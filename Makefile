@@ -45,13 +45,11 @@ prereqs:
 			echo "  [-] swift $$ver at $(SWIFT); this needs $(MIN_SWIFT) or later"; \
 			echo "      sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
 			exit 1; fi; \
+		echo "  [+] swift $$ver at $(SWIFT)"; \
 		sh -c '$(SWIFT) package dump-package; exit $$?' >/dev/null 2>&1; probe=$$?; \
 		if [ $$probe -ne 0 ] && [ $$probe -lt 128 ]; then \
-			echo "  [-] no swift here can load Package.swift"; \
-			echo "      try:   sudo xcode-select --reset"; \
-			echo "      then:  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
-			exit 1; fi; \
-		echo "  [+] swift $$ver at $(SWIFT)"
+			echo "  [!] it may not load Package.swift; the build below is the real test"; \
+			echo "      if it fails:  sudo xcode-select --reset"; fi
 
 # A past 'sudo make' leaves root-owned files in .build that a later user build
 # cannot overwrite, and the resulting errors do not say why.
