@@ -23,15 +23,12 @@ meets() {
 
 # Only meaningful next to a manifest; elsewhere the version is all we can check.
 #
-# A probe killed by a signal says nothing about the toolchain, only that the
-# probe itself fell over, so it counts as a pass. Just a non-zero exit is a real
-# verdict: the manifest was read and rejected.
+# Any failure counts, a crash included: a half-upgraded install aborts in dyld
+# before it reads anything. Skipping a candidate is safe because the fallback
+# below still returns one, so this can only choose better, never block.
 loads() {
     [ -f Package.swift ] || return 0
     sh -c '"$0" package dump-package; exit $?' "$1" >/dev/null 2>&1
-    status=$?
-    [ "$status" -lt 128 ] || return 0
-    [ "$status" -eq 0 ]
 }
 
 candidates() {

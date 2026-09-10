@@ -47,7 +47,7 @@ prereqs:
 			exit 1; fi; \
 		echo "  [+] swift $$ver at $(SWIFT)"; \
 		sh -c '$(SWIFT) package dump-package; exit $$?' >/dev/null 2>&1; probe=$$?; \
-		if [ $$probe -ne 0 ] && [ $$probe -lt 128 ]; then \
+		if [ $$probe -ne 0 ]; then \
 			echo "  [!] it may not load Package.swift; the build below is the real test"; \
 			echo "      if it fails:  sudo xcode-select --reset"; fi
 
