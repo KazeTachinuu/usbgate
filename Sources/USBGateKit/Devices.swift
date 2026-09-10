@@ -8,13 +8,13 @@ import IOKit.usb
 /// Everything here returns nil rather than guessing.
 public enum Devices {
     static func property(_ node: io_service_t, _ key: String) -> Any? {
-        unsafe IORegistryEntryCreateCFProperty(node, key as CFString, kCFAllocatorDefault, 0)?
+        IORegistryEntryCreateCFProperty(node, key as CFString, kCFAllocatorDefault, 0)?
             .takeRetainedValue()
     }
 
     /// `IORegistryEntryFromBSDName` does not exist; this is the supported route.
     static func node(forBSDName bsd: String) -> io_service_t {
-        guard let match = unsafe IOBSDNameMatching(kIOMainPortDefault, 0, bsd) else {
+        guard let match = IOBSDNameMatching(kIOMainPortDefault, 0, bsd) else {
             return IO_OBJECT_NULL
         }
         return IOServiceGetMatchingService(kIOMainPortDefault, match)  // consumes match
@@ -28,9 +28,9 @@ public enum Devices {
         var current = node
         IOObjectRetain(current)
         while current != IO_OBJECT_NULL {
-            if unsafe IOObjectConformsTo(current, kIOUSBHostDeviceClassName) != 0 { return current }
+            if IOObjectConformsTo(current, kIOUSBHostDeviceClassName) != 0 { return current }
             var parent: io_service_t = IO_OBJECT_NULL
-            let result = unsafe IORegistryEntryGetParentEntry(current, kIOServicePlane, &parent)
+            let result = IORegistryEntryGetParentEntry(current, kIOServicePlane, &parent)
             IOObjectRelease(current)
             guard result == KERN_SUCCESS else { return IO_OBJECT_NULL }
             current = parent
@@ -42,7 +42,7 @@ public enum Devices {
     static func interfaceClasses(of device: io_service_t) -> [USBClass] {
         var iterator: io_iterator_t = IO_OBJECT_NULL
         guard
-            unsafe IORegistryEntryGetChildIterator(device, kIOServicePlane, &iterator)
+            IORegistryEntryGetChildIterator(device, kIOServicePlane, &iterator)
                 == KERN_SUCCESS
         else { return [] }
         defer { IOObjectRelease(iterator) }
@@ -50,7 +50,7 @@ public enum Devices {
         var classes: [USBClass] = []
         while case let child = IOIteratorNext(iterator), child != IO_OBJECT_NULL {
             defer { IOObjectRelease(child) }
-            guard unsafe IOObjectConformsTo(child, kIOUSBHostInterfaceClassName) != 0,
+            guard IOObjectConformsTo(child, kIOUSBHostInterfaceClassName) != 0,
                 let value = property(child, kUSBHostMatchingPropertyInterfaceClass) as? NSNumber
             else { continue }
             classes.append(USBClass(rawValue: value.intValue))
@@ -113,7 +113,7 @@ public enum Devices {
     public static func diskName(for device: Device) -> String? {
         var iterator: io_iterator_t = IO_OBJECT_NULL
         guard
-            unsafe IOServiceGetMatchingServices(
+            IOServiceGetMatchingServices(
                 kIOMainPortDefault, IOServiceMatching(kIOMediaClass), &iterator) == KERN_SUCCESS
         else { return nil }
         defer { IOObjectRelease(iterator) }
@@ -136,7 +136,7 @@ public enum Devices {
     public static func attachedStorage() -> [Attached] {
         var iterator: io_iterator_t = IO_OBJECT_NULL
         guard
-            unsafe IOServiceGetMatchingServices(
+            IOServiceGetMatchingServices(
                 kIOMainPortDefault, IOServiceMatching(kIOUSBHostDeviceClassName), &iterator)
                 == KERN_SUCCESS
         else { return [] }
@@ -156,13 +156,13 @@ public enum Devices {
     /// BSD names of every mounted volume backed by a device node.
     static func mountedVolumes() -> [String] {
         var buffer: UnsafeMutablePointer<statfs>?
-        let count = unsafe getmntinfo(&buffer, MNT_NOWAIT)
-        guard count > 0, let mounts = unsafe buffer else { return [] }
+        let count = getmntinfo(&buffer, MNT_NOWAIT)
+        guard count > 0, let mounts = buffer else { return [] }
         return (0..<Int(count)).compactMap { index in
-            var entry = unsafe mounts[index]
-            let path = unsafe withUnsafeBytes(of: &entry.f_mntfromname) { raw -> String in
+            var entry = mounts[index]
+            let path = withUnsafeBytes(of: &entry.f_mntfromname) { raw -> String in
                 guard let base = raw.baseAddress else { return "" }
-                return unsafe String(cString: base.assumingMemoryBound(to: CChar.self))
+                return String(cString: base.assumingMemoryBound(to: CChar.self))
             }
             return path.hasPrefix("/dev/") ? String(path.dropFirst(5)) : nil
         }

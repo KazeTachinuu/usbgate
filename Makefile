@@ -9,7 +9,7 @@ LOG     := .build/install.log
 STATE   := /var/db/usbgate
 
 MIN_MACOS := 13
-MIN_SWIFT := 6.2
+MIN_SWIFT := 6.0
 
 # Chosen by version, not by location: a suitable Swift on PATH always wins.
 SWIFT := $(shell ./scripts/swift-toolchain.sh $(MIN_SWIFT))

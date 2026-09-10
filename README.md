@@ -7,7 +7,8 @@ model. A drive that is not on the list does not mount.
 
 ## Install
 
-Requires macOS 13 and Swift 6.2 or later; `make` checks both first.
+Requires macOS 13 and Swift 6.0 or later, which stock Xcode 16 provides.
+`make` checks both first.
 
 ```sh
 make install    # run as yourself, not with sudo

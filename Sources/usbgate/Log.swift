@@ -125,7 +125,7 @@ enum Log {
             flush()
             // Piped output is block buffered, so `usbgate watch | grep` would show
             // nothing until the buffer filled or the process ended.
-            unsafe fflush(stdout)
+            fflush(stdout)
         }
 
         mutating func flush() {

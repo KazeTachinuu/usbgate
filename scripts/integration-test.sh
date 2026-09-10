@@ -12,7 +12,7 @@ check() { if eval "$2" >/dev/null 2>&1; then ok "$1"; else bad "$1"; fi; }
 
 # Same toolchain the Makefile picks, so this behaves identically whatever is on
 # PATH when it runs.
-SWIFT=$(./scripts/swift-toolchain.sh 6.2)
+SWIFT=$(./scripts/swift-toolchain.sh 6.0)
 # Read from the daemon plist so the identifier lives in one place.
 LABEL=$(plutil -extract Label raw deploy/*.plist)
 ROOT=0; [ "$(id -u)" -eq 0 ] && ROOT=1
@@ -67,41 +67,29 @@ fi
 
 echo; echo "identity cross-check against ioreg"
 # usbgate reads the vendor, product and serial from three different IOKit
-# properties. Nothing inside the package can prove it read the right one of the
-# three, so every id it reports is checked against an independent read of the
-# registry. Needles are built into variables first: ioreg's tree drawing makes
-# quoting inside the pipeline hard to get right.
+# properties. Nothing inside the package can prove it read the right one, so
+# every attached mass-storage device found in the registry must appear in
+# `usbgate status`. Driven from the registry, not from status, because status
+# also lists authorised drives that are not plugged in.
 registry=$(mktemp)
 ioreg -r -c IOUSBHostDevice -l -w0 2>/dev/null > "$registry"
-reported=$($BIN status 2>/dev/null | grep -oE '[0-9a-f]{4}:[0-9a-f]{4}/[^ ]+' | sort -u)
+reported=$($BIN status 2>/dev/null)
 
-if [ -z "$reported" ]; then
+present=$(awk '
+    /"idVendor" =/                { v = $NF }
+    /"idProduct" =/               { p = $NF }
+    /"USB Serial Number" =/       { gsub(/"/, "", $NF); s = $NF }
+    /"bInterfaceClass" = 8$/      { if (v != "" && s != "") printf "%04x:%04x/%s\n", v, p, s }
+' "$registry" | sort -u)
+
+if [ -z "$present" ]; then
     skipt "identity cross-check (no usb storage attached)"
 else
-    for id in $reported; do
-        vid=${id%%:*}
-        pid=${id#*:}; pid=${pid%%/*}
-        serial=${id##*/}
-
-        needle="\"USB Serial Number\" = \"$serial\""
-        if grep -Fq "$needle" "$registry"; then
-            ok "serial $serial is in the registry"
+    for id in $present; do
+        if printf '%s' "$reported" | grep -qF "$id"; then
+            ok "usbgate reports $id"
         else
-            bad "serial $serial is not in the registry"
-        fi
-
-        needle="\"idVendor\" = $((16#$vid))"
-        if grep -Eq "$needle\$" "$registry"; then
-            ok "vendor 0x$vid is a registry idVendor"
-        else
-            bad "vendor 0x$vid is not a registry idVendor"
-        fi
-
-        needle="\"idProduct\" = $((16#$pid))"
-        if grep -Eq "$needle\$" "$registry"; then
-            ok "product 0x$pid is a registry idProduct"
-        else
-            bad "product 0x$pid is not a registry idProduct"
+            bad "usbgate does not report attached drive $id"
         fi
     done
 fi

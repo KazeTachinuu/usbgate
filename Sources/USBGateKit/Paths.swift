@@ -71,7 +71,7 @@ public struct Paths: Sendable {
             return .failure(.untrusted(why))
         }
         guard let data = manager.contents(atPath: path),
-            let root = try? unsafe PropertyListSerialization.propertyList(from: data, format: nil)
+            let root = try? PropertyListSerialization.propertyList(from: data, format: nil)
         else { return .failure(.malformed) }
         return .success(root)
     }

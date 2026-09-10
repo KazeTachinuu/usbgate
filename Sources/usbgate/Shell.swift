@@ -15,7 +15,7 @@ func fail(_ message: String, code: Int32 = 1) -> Never {
 /// Flushed at once: a command that sits silent looks like it has hung.
 func progress(_ text: String) {
     print("  \(Term.dim(text))")
-    unsafe fflush(stdout)
+    fflush(stdout)
 }
 
 /// Argument mistakes are reported before this, so nobody types a password only to

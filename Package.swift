@@ -1,13 +1,10 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.0
 import PackageDescription
 
 let strict: [SwiftSetting] = [
     .swiftLanguageMode(.v6),
     .enableUpcomingFeature("ExistentialAny"),
     .enableUpcomingFeature("InternalImportsByDefault"),
-    // Every unsafe construct must be spelled `unsafe`, so a security review sees
-    // each IOKit and Disk Arbitration boundary instead of hunting for them.
-    .strictMemorySafety(),
     .unsafeFlags(["-warnings-as-errors"], .when(configuration: .debug)),
 ]
 

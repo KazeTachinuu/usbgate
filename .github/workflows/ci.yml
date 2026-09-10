@@ -8,16 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The package needs Swift 6.2 or later for strict memory safety, and the
-      # runner's bundled Xcode is older. swiftly is what the README tells a
-      # developer to use, so CI uses it too.
-      - name: Swift toolchain
-        run: |
-          brew install swiftly
-          swiftly init --assume-yes --no-modify-profile --skip-install
-          swiftly install 6.3.3 --assume-yes
-          echo "$HOME/.swiftly/bin" >> "$GITHUB_PATH"
-
       - name: Build
         run: swift build -c release
 

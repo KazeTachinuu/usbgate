@@ -141,7 +141,7 @@ public final class Gate: @unchecked Sendable {
     // MARK: - Approval
 
     private func dissenter(_ text: String) -> Unmanaged<DADissenter> {
-        unsafe Unmanaged.passRetained(
+        Unmanaged.passRetained(
             DADissenterCreate(
                 kCFAllocatorDefault, DAReturn(kDAReturnNotPermitted), text as CFString))
     }
@@ -150,7 +150,7 @@ public final class Gate: @unchecked Sendable {
         let current = policy
         let usable = status.isUsable
         guard let description = DADiskCopyDescription(disk) as? [String: Any] else {
-            return unsafe dissenter(current.message)
+            return dissenter(current.message)
         }
         let bsd = description[kDADiskDescriptionMediaBSDNameKey as String] as? String ?? "?"
         let transport = Transport.of(description, isBehindUSB: Devices.isBehindUSB(bsdName: bsd))
@@ -178,7 +178,7 @@ public final class Gate: @unchecked Sendable {
             note(
                 attached, transport: transport, description: description, reason: reason,
                 message: current.message)
-            return unsafe dissenter(current.message)
+            return dissenter(current.message)
         }
     }
 
@@ -212,7 +212,7 @@ public final class Gate: @unchecked Sendable {
     /// comes from the device.
     private func announce(_ name: String, _ identity: String, _ message: String) {
         var console = stat()
-        guard unsafe stat("/dev/console", &console) == 0, console.st_uid != 0 else { return }
+        guard stat("/dev/console", &console) == 0, console.st_uid != 0 else { return }
 
         // Disk Arbitration can ask about the same disk more than once.
         let repeated = lastAnnounced.map {
@@ -278,7 +278,7 @@ public final class Gate: @unchecked Sendable {
         let current = policy
         let usable = status.isUsable
         for bsd in Devices.mountedVolumes() {
-            guard let partition = unsafe DADiskCreateFromBSDName(kCFAllocatorDefault, session, bsd),
+            guard let partition = DADiskCreateFromBSDName(kCFAllocatorDefault, session, bsd),
                 let description = DADiskCopyDescription(partition) as? [String: Any],
                 Transport.of(description, isBehindUSB: Devices.isBehindUSB(bsdName: bsd))
                     .isGoverned,
@@ -319,7 +319,7 @@ public final class Gate: @unchecked Sendable {
         hangup.setEventHandler { [weak self] in self?.reload() }
         hangup.resume()
 
-        unsafe DARegisterDiskMountApprovalCallback(
+        DARegisterDiskMountApprovalCallback(
             created, nil, approvalCallback, Unmanaged.passUnretained(self).toOpaque())
         DASessionSetDispatchQueue(created, queue)
 
@@ -346,7 +346,7 @@ extension Gate {
     /// the inode and a watch on the old file would not survive it.
     fileprivate func watchAllowlist(on queue: DispatchQueue) {
         paths.ensureDirectory()
-        let descriptor = unsafe open(paths.directory, O_EVTONLY)
+        let descriptor = open(paths.directory, O_EVTONLY)
         guard descriptor >= 0 else {
             log.error("cannot watch the allowlist directory, reload needs SIGHUP")
             return
@@ -364,11 +364,11 @@ extension Gate {
 ///
 /// A missing context is an internal error and must still fail closed.
 private let approvalCallback: DADiskMountApprovalCallback = { disk, context in
-    guard let gate = unsafe context else {
-        return unsafe Unmanaged.passRetained(
+    guard let gate = context else {
+        return Unmanaged.passRetained(
             DADissenterCreate(
                 kCFAllocatorDefault, DAReturn(kDAReturnNotPermitted),
                 Policy.defaultMessage as CFString))
     }
-    return unsafe Unmanaged<Gate>.fromOpaque(gate).takeUnretainedValue().approve(disk)
+    return Unmanaged<Gate>.fromOpaque(gate).takeUnretainedValue().approve(disk)
 }
