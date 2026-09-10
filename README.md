@@ -30,7 +30,7 @@ $ usbgate rejected
         5h ago - not in allowlist
 
   cannot be authorised
-  [-]    Samsung PSSD T7     pci-express
+  [-]    External SSD        pci-express
         12m ago x2 - pci-express storage is not permitted
 
 $ sudo usbgate allow

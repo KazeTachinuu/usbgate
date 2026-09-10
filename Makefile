@@ -49,11 +49,21 @@ prereqs:
 	@ver=$$($(SWIFT) -version 2>/dev/null | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1); \
 		if [ -z "$$ver" ]; then \
 			echo "  [-] $(SWIFT) exists but does not run"; \
-			echo "      reinstall them:  sudo rm -rf $(CLT) && xcode-select --install"; \
+			case "$(SWIFT)" in \
+				/usr/bin/*|$(CLT)/*) \
+					echo "      sudo rm -rf $(CLT) && xcode-select --install" ;; \
+				*.app/*) echo "      update Xcode from the App Store" ;; \
+				*) echo "      swiftly install latest" ;; \
+			esac; \
 			exit 1; fi; \
 		if [ "$$(printf '%s\n%s\n' "$(MIN_SWIFT)" "$$ver" | sort -V | head -1)" != "$(MIN_SWIFT)" ]; then \
 			echo "  [-] swift $$ver at $(SWIFT); this needs $(MIN_SWIFT) or later"; \
-			echo "      reinstall them:  sudo rm -rf $(CLT) && xcode-select --install"; \
+			case "$(SWIFT)" in \
+				/usr/bin/*|$(CLT)/*) \
+					echo "      sudo rm -rf $(CLT) && xcode-select --install" ;; \
+				*.app/*) echo "      update Xcode from the App Store" ;; \
+				*) echo "      swiftly install latest" ;; \
+			esac; \
 			exit 1; fi; \
 		echo "  [+] swift $$ver at $(SWIFT)"
 
