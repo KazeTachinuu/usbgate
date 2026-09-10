@@ -10,19 +10,30 @@ STATE   := /var/db/usbgate
 
 MIN_MACOS := 13
 MIN_SWIFT := 6.0.3
+CLT       := /Library/Developer/CommandLineTools
 
 # Chosen by version, not by location: a suitable Swift on PATH always wins.
 SWIFT = $(eval SWIFT := $(shell ./scripts/swift-toolchain.sh $(MIN_SWIFT)))$(SWIFT)
 
+# usbgate has no dependencies, so the compiler is enough: no SwiftPM, and
+# nothing in it to go wrong. Flags mirror the swiftSettings in Package.swift,
+# which is still what runs the tests.
+SWIFTC = $(dir $(SWIFT))swiftc
+STRICT := -O -swift-version 6 -enable-upcoming-feature ExistentialAny \
+	  -enable-upcoming-feature InternalImportsByDefault
+OUT    := $(dir $(RELEASE))
+
+# True when an earlier 'sudo make' left files a user build cannot overwrite.
+ROOT_OWNED = [ -d .build ] && find .build -user root -print -quit 2>/dev/null | grep -q .
+
 # swiftlint needs sourcekitd, which Command Line Tools ships outside the search
 # path. It has to be set on the command itself: SIP strips DYLD_* when make execs
 # /bin/sh, so exporting it from here would never reach swiftlint.
-SOURCEKIT := DYLD_FRAMEWORK_PATH=$(shell xcode-select -p)/usr/lib
+SOURCEKIT = DYLD_FRAMEWORK_PATH=$(shell xcode-select -p)/usr/lib
+
+.DEFAULT_GOAL := build
 
 .PHONY: build test lint format sast check tools integration install uninstall clean not-root sane prereqs
-
-# Building and installing need only the Swift toolchain. The linters and the SAST
-# scanner are optional: when absent they say so and are skipped.
 
 # Everything the build and the daemon require, checked before anything is built.
 prereqs:
@@ -38,31 +49,32 @@ prereqs:
 	@ver=$$($(SWIFT) -version 2>/dev/null | sed -n 's/.*Swift version \([0-9][0-9.]*\).*/\1/p' | head -1); \
 		if [ -z "$$ver" ]; then \
 			echo "  [-] $(SWIFT) exists but does not run"; \
-			echo "      try:   sudo xcode-select --reset"; \
-			echo "      then:  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
+			echo "      reinstall them:  sudo rm -rf $(CLT) && xcode-select --install"; \
 			exit 1; fi; \
 		if [ "$$(printf '%s\n%s\n' "$(MIN_SWIFT)" "$$ver" | sort -V | head -1)" != "$(MIN_SWIFT)" ]; then \
 			echo "  [-] swift $$ver at $(SWIFT); this needs $(MIN_SWIFT) or later"; \
-			echo "      sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
+			echo "      reinstall them:  sudo rm -rf $(CLT) && xcode-select --install"; \
 			exit 1; fi; \
-		echo "  [+] swift $$ver at $(SWIFT)"; \
-		sh -c '$(SWIFT) package dump-package; exit $$?' >/dev/null 2>&1; probe=$$?; \
-		if [ $$probe -ne 0 ]; then \
-			echo "  [!] it may not build; the build below is the real test"; \
-			echo "      if it fails, install a toolchain beside it, which is picked up"; \
-			echo "      automatically:  brew install swiftly && swiftly install latest"; fi
+		echo "  [+] swift $$ver at $(SWIFT)"
 
 # A past 'sudo make' leaves root-owned files in .build that a later user build
 # cannot overwrite, and the resulting errors do not say why.
 sane:
-	@if [ -d .build ] && find .build -user root -print -quit 2>/dev/null | grep -q .; then \
+	@if $(ROOT_OWNED); then \
 		echo "[!] .build contains root-owned files from an earlier sudo run"; \
 		echo "    fix with: make clean"; \
 		exit 1; \
 	fi
 
 build: sane prereqs
-	$(SWIFT) build -c release
+	@mkdir -p $(OUT)
+	@$(SWIFTC) $(STRICT) -emit-library -static -emit-module -module-name USBGateKit \
+		-emit-module-path $(OUT)USBGateKit.swiftmodule \
+		-o $(OUT)libUSBGateKit.a Sources/USBGateKit/*.swift
+	@$(SWIFTC) $(STRICT) -module-name $(BIN) -o $(RELEASE) Sources/usbgate/*.swift \
+		-I $(OUT) -L $(OUT) -lUSBGateKit \
+		-framework DiskArbitration -framework IOKit
+	@echo "  [+] $(RELEASE)"
 
 test: sane prereqs
 	$(SWIFT) test
@@ -113,17 +125,10 @@ install: not-root sane prereqs
 	@mkdir -p .build
 	@printf "\n  usbgate\n\n"
 	@printf "  [*] building\n"
-	@$(SWIFT) build -c release >$(LOG) 2>&1 || { \
+	@$(MAKE) build >$(LOG) 2>&1 || { \
 		printf "  [-] build failed\n\n"; \
-		grep -E "error:" $(LOG) | head -20 || cat $(LOG); \
+		{ grep -E "error:" $(LOG) || cat $(LOG); } | head -20; \
 		printf "\n  full output: %s\n\n" "$(LOG)"; exit 1; }
-	@printf "  [*] testing\n"
-	@$(SWIFT) test >$(LOG) 2>&1 || { \
-		printf "  [-] tests failed\n\n"; \
-		grep -E "error:|recorded an issue|Test .* failed" $(LOG) | head -20 || cat $(LOG); \
-		printf "\n  full output: %s\n\n" "$(LOG)"; exit 1; }
-	@printf "  [+] %s tests passed\n" \
-		"$$(sed -n 's/.*with \([0-9]*\) tests passed.*/\1/p' $(LOG) | tail -1)"
 	@printf "  [*] installing, sudo required\n"
 	@sudo install -d -o root -g wheel -m 755 $(PREFIX)
 	@sudo install -o root -g wheel -m 755 $(RELEASE) $(PREFIX)/$(BIN)
@@ -157,7 +162,7 @@ uninstall:
 	@printf "\n      to remove that too:  sudo rm -rf %s\n\n" "$(STATE)"
 
 clean:
-	@if [ -d .build ] && find .build -user root -print -quit 2>/dev/null | grep -q .; then \
+	@if $(ROOT_OWNED); then \
 		echo "[!] removing root-owned build files, this needs sudo"; \
 		sudo rm -rf .build; \
 	else rm -rf .build; fi

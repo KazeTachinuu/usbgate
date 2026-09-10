@@ -16,7 +16,7 @@ jobs:
         run: swift --version
 
       - name: Build
-        run: swift build -c release
+        run: make build
 
       - name: Test
         run: swift test

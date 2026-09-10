@@ -99,7 +99,7 @@ commands edit it for you; you can also edit it by hand.
 `Message` is the only text a user ever sees, in the mount-failure dialog and in
 the notification. Replace it with your own wording and a way to reach someone.
 
-The file must be `root:wheel` and writable by nobody else, or it is ignored, and
+The file must be owned by root and writable by nobody else, or it is ignored, and
 an ignored or missing file refuses every drive.
 
 ## Licence
