@@ -22,9 +22,16 @@ meets() {
 }
 
 # Only meaningful next to a manifest; elsewhere the version is all we can check.
+#
+# A probe killed by a signal says nothing about the toolchain, only that the
+# probe itself fell over, so it counts as a pass. Just a non-zero exit is a real
+# verdict: the manifest was read and rejected.
 loads() {
     [ -f Package.swift ] || return 0
-    "$1" package dump-package >/dev/null 2>&1
+    sh -c '"$0" package dump-package; exit $?' "$1" >/dev/null 2>&1
+    status=$?
+    [ "$status" -lt 128 ] || return 0
+    [ "$status" -eq 0 ]
 }
 
 candidates() {

@@ -45,7 +45,8 @@ prereqs:
 			echo "  [-] swift $$ver at $(SWIFT); this needs $(MIN_SWIFT) or later"; \
 			echo "      sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
 			exit 1; fi; \
-		if ! $(SWIFT) package dump-package >/dev/null 2>&1; then \
+		sh -c '$(SWIFT) package dump-package; exit $$?' >/dev/null 2>&1; probe=$$?; \
+		if [ $$probe -ne 0 ] && [ $$probe -lt 128 ]; then \
 			echo "  [-] no swift here can load Package.swift"; \
 			echo "      try:   sudo xcode-select --reset"; \
 			echo "      then:  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"; \
