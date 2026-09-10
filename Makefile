@@ -48,8 +48,9 @@ prereqs:
 		echo "  [+] swift $$ver at $(SWIFT)"; \
 		sh -c '$(SWIFT) package dump-package; exit $$?' >/dev/null 2>&1; probe=$$?; \
 		if [ $$probe -ne 0 ]; then \
-			echo "  [!] it may not load Package.swift; the build below is the real test"; \
-			echo "      if it fails:  sudo xcode-select --reset"; fi
+			echo "  [!] it may not build; the build below is the real test"; \
+			echo "      if it fails, install a toolchain beside it, which is picked up"; \
+			echo "      automatically:  brew install swiftly && swiftly install latest"; fi
 
 # A past 'sudo make' leaves root-owned files in .build that a later user build
 # cannot overwrite, and the resulting errors do not say why.
